@@ -4,8 +4,6 @@ PaySafe is an educational digital-wallet application that demonstrates peer-to-p
 
 > **Important:** PaySafe is a demo project, not a bank or payment processor. Top-ups are simulated. Do not use real financial or identity data.
 
-![PaySafe wallet dashboard](docs/screenshots/dashboard.png)
-
 ## Features
 
 - Account registration, login, one-time-password verification, password recovery, and configurable two-factor authentication.
@@ -14,12 +12,6 @@ PaySafe is an educational digital-wallet application that demonstrates peer-to-p
 - Fraud scoring through a scikit-learn model service. A transaction classified as suspicious is recorded as blocked and creates a fraud report; admins can review reports and manage user accounts.
 - Profile and security settings, including password/PIN changes and session revocation.
 - Responsive React interface and a Docker Compose deployment stack with Caddy as a reverse proxy.
-
-## Screenshots
-
-| Wallet | Transfer | Fraud review |
-| --- | --- | --- |
-| ![Wallet dashboard](docs/screenshots/dashboard.png) | ![Transfer confirmation](docs/screenshots/send-confirm.png) | ![Blocked transfer](docs/screenshots/fraud-blocked-result.png) |
 
 ## Architecture
 
@@ -50,18 +42,39 @@ The API authenticates and validates wallet operations, requests a fraud predicti
 - Python 3.12 and pip
 - PostgreSQL
 
-Create a PostgreSQL database, then configure the environment files before starting the services. From the repository root:
+Create a PostgreSQL database, then configure the backend environment. From the repository root:
 
 ```sh
 cd backend
 cp .env.example .env
 ```
 
-Set `DATABASE_URL` to your PostgreSQL connection string, generate distinct random values for `ACCESS_TOKEN_SECRET` and `REFRESH_TOKEN_SECRET`, and set `CORS_ORIGIN=http://localhost:5173`. For development, the example config points the fraud service at `http://localhost:5000`. Keep secrets out of source control.
+Set `DATABASE_URL` and `DIRECT_URL` to your PostgreSQL connection strings, provide distinct values for `ACCESS_TOKEN_SECRET` and `REFRESH_TOKEN_SECRET`, and keep `CORS_ORIGIN=http://localhost:5173`. The example config connects the backend to the fraud API at `http://localhost:5000`. Keep secrets out of source control.
 
-Open three terminals from the repository root:
+Start each service in a separate terminal from the repository root.
 
-**1. Fraud model API**
+### Backend
+
+```sh
+cd backend
+pnpm install
+pnpm exec prisma migrate dev
+pnpm run dev
+```
+
+The API listens on `http://localhost:8000`.
+
+### Frontend
+
+```sh
+cd frontend
+pnpm install
+pnpm run dev
+```
+
+The frontend uses `http://localhost:8000/api/v1` as its default API URL. Open the URL Vite prints, usually `http://localhost:5173`.
+
+### ML API
 
 ```sh
 cd ml-api
@@ -71,39 +84,7 @@ pip install -r requirements.txt
 uvicorn main:app --reload --host 0.0.0.0 --port 5000
 ```
 
-The model files under `ml-api/model/` are required by the service.
-
-**2. Backend**
-
-```sh
-cd backend
-pnpm install
-pnpm exec prisma migrate deploy --schema src/prisma/schema.prisma
-pnpm run dev
-```
-
-The API listens on `http://localhost:8000`. Its health endpoint is `http://localhost:8000/api/v1/health`.
-
-**3. Frontend**
-
-```sh
-cd frontend
-pnpm install
-```
-
-The default API base URL is `http://localhost:8000/api/v1`. To override it, create `frontend/.env` with:
-
-```env
-VITE_API_URL=http://localhost:8000/api/v1
-```
-
-Then start the development server:
-
-```sh
-pnpm run dev
-```
-
-Open the URL Vite prints (usually `http://localhost:5173`). In development, verification codes for email/SMS are logged by the backend; configure Resend and Twilio credentials if you want to test delivery.
+The model files under `ml-api/model/` are required. In development, verification codes for email/SMS are logged by the backend; configure Resend and Twilio credentials if you want to test delivery.
 
 ## Docker deployment
 
@@ -182,5 +163,4 @@ pnpm run test:integration
 backend/    Express API, Prisma schema/migrations, and tests
 frontend/   React + TypeScript web application
 ml-api/     FastAPI fraud prediction service and model artifacts
-docs/       Application screenshots
 ```
