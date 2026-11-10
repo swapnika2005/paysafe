@@ -1,0 +1,7 @@
+safepay.vynuro.tech {
+    reverse_proxy frontend:80
+}
+
+api.safepay.vynuro.tech {
+    reverse_proxy backend:8000
+}

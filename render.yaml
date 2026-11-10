@@ -1,0 +1,64 @@
+# Free-tier Blueprint (Render)
+# Connect this repo in Render Dashboard → New → Blueprint
+# Set secrets in the dashboard; do not commit real credentials.
+
+services:
+  - type: web
+    name: safepay-ml
+    runtime: docker
+    dockerfilePath: ./ml-api/Dockerfile
+    dockerContext: ./ml-api
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "5000"
+
+  - type: web
+    name: safepay-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "8000"
+      - key: ML_API_URL
+        fromService:
+          name: safepay-ml
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: ML_MODEL_VERSION
+        value: v1.0.0
+      - key: ACCESS_TOKEN_EXPIRY
+        value: 15m
+      - key: REFRESH_TOKEN_EXPIRY
+        value: 7d
+      # Demo-friendly free tier (ML may sleep)
+      - key: DEMO_ALLOW_ML_FALLBACK
+        value: "true"
+      - key: ALLOW_MOCK_TOPUP
+        value: "true"
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: ACCESS_TOKEN_SECRET
+        generateValue: true
+      - key: REFRESH_TOKEN_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_PHONE_NUMBER
+        sync: false

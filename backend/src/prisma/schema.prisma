@@ -1,0 +1,218 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ──────────────────────────────────────────
+// ENUMS
+// ──────────────────────────────────────────
+
+enum UserRole {
+  user // Regular wallet user
+  admin // Can review fraud, freeze accounts
+}
+
+enum TxnStatus {
+  PENDING // ML check in progress
+  APPROVED // Transferred successfully
+  BLOCKED // Blocked by fraud detection
+  FAILED // Insufficient balance or other error
+  REVERSED // Admin reversed a transaction
+}
+
+enum LogType {
+  DEBIT // Money left this wallet
+  CREDIT // Money entered this wallet
+  TOPUP // Mock top-up from payment gateway
+  REFUND // Reversed transaction credit
+}
+
+enum ReviewStatus {
+  PENDING // Admin has not reviewed yet
+  CONFIRMED_FRAUD // Admin confirmed it was fraud
+  FALSE_ALARM // ML was wrong, admin cleared it
+}
+
+enum NotifType {
+  SUCCESS // Transaction approved
+  WARNING // Suspicious activity warning
+  FRAUD_ALERT // Transaction blocked
+  INFO // General information
+}
+
+enum OtpPurpose {
+  PHONE_VERIFY // Verify phone on registration
+  LOGIN // 2FA on login
+  RESET_PIN // Reset transaction PIN
+  RESET_PASSWORD // Reset account password
+  EMAIL_VERIFY // Verify email address
+}
+
+// ──────────────────────────────────────────
+// MODELS
+// ──────────────────────────────────────────
+
+model User {
+  id                String    @id @default(uuid())
+  full_name         String    @db.VarChar(100)
+  email             String    @unique @db.VarChar(150)
+  phone             String?   @unique @db.VarChar(20)
+  cnic              String?   @unique @db.VarChar(20)
+  pan               String?   @unique @db.VarChar(10)
+  password_hash     String
+  pin_hash          String?
+  role              UserRole  @default(user)
+  is_frozen         Boolean   @default(false)
+  is_verified       Boolean   @default(false)
+  is_email_verified Boolean   @default(false)
+  two_factor_enabled Boolean  @default(true)
+  avatar_url        String?
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+  last_login        DateTime?
+
+  // Relations
+  wallet        Wallet?
+  sent          Transaction[]  @relation("SentTransactions")
+  received      Transaction[]  @relation("ReceivedTransactions")
+  wallet_logs   WalletLog[]
+  notifications Notification[]
+  sessions      Session[]
+  otps          Otp[]
+  fraud_reviews FraudReport[]  @relation("ReviewedBy")
+
+  @@map("users")
+}
+
+model Wallet {
+  id         String   @id @default(uuid())
+  user_id    String   @unique
+  balance    Decimal  @default(0) @db.Decimal(16, 2)
+  currency   String   @default("INR") @db.VarChar(5)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("wallets")
+}
+
+model Transaction {
+  id                 String    @id @default(uuid())
+  sender_id          String
+  receiver_id        String
+  amount             Decimal   @db.Decimal(16, 2)
+  note               String?
+  status             TxnStatus @default(PENDING)
+  risk_score         Decimal?  @db.Decimal(5, 2)
+  is_fraud           Boolean   @default(false)
+  fraud_reasons      String[]
+  device_ip          String?   @db.VarChar(50)
+  device_type        String?   @db.VarChar(20)
+  location           String?   @db.VarChar(100)
+  hour_of_day        Int?      @db.SmallInt
+  sender_txn_count   Int?
+  receiver_txn_count Int?
+  idempotency_key    String?   @db.VarChar(64)
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+
+  // Relations
+  sender        User           @relation("SentTransactions", fields: [sender_id], references: [id])
+  receiver      User           @relation("ReceivedTransactions", fields: [receiver_id], references: [id])
+  wallet_logs   WalletLog[]
+  fraud_report  FraudReport?
+  notifications Notification[]
+
+  @@unique([sender_id, idempotency_key])
+  @@map("transactions")
+}
+
+model WalletLog {
+  id             String   @id @default(uuid())
+  user_id        String
+  transaction_id String
+  type           LogType
+  amount         Decimal  @db.Decimal(16, 2)
+  balance_before Decimal  @db.Decimal(16, 2)
+  balance_after  Decimal  @db.Decimal(16, 2)
+  created_at     DateTime @default(now())
+
+  // Relations
+  user        User        @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  transaction Transaction @relation(fields: [transaction_id], references: [id], onDelete: Cascade)
+
+  @@map("wallet_logs")
+}
+
+model FraudReport {
+  id               String       @id @default(uuid())
+  transaction_id   String       @unique
+  risk_score       Decimal?     @db.Decimal(5, 2)
+  fraud_signals    String[]
+  ml_model_version String?      @db.VarChar(20)
+  review_status    ReviewStatus @default(PENDING)
+  reviewed_by      String?
+  admin_note       String?
+  reviewed_at      DateTime?
+  created_at       DateTime     @default(now())
+
+  // Relations
+  transaction Transaction @relation(fields: [transaction_id], references: [id], onDelete: Cascade)
+  reviewer    User?       @relation("ReviewedBy", fields: [reviewed_by], references: [id])
+
+  @@map("fraud_reports")
+}
+
+model Notification {
+  id             String    @id @default(uuid())
+  user_id        String
+  transaction_id String?
+  title          String    @db.VarChar(100)
+  message        String
+  type           NotifType
+  is_read        Boolean   @default(false)
+  created_at     DateTime  @default(now())
+
+  // Relations
+  user        User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  transaction Transaction? @relation(fields: [transaction_id], references: [id], onDelete: SetNull)
+
+  @@map("notifications")
+}
+
+model Session {
+  id          String   @id @default(uuid())
+  user_id     String
+  token_hash  String
+  device_info String?
+  ip_address  String?  @db.VarChar(50)
+  is_revoked  Boolean  @default(false)
+  expires_at  DateTime
+  created_at  DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Otp {
+  id         String     @id @default(uuid())
+  user_id    String
+  code_hash  String
+  purpose    OtpPurpose
+  is_used    Boolean    @default(false)
+  attempts   Int        @default(0) @db.SmallInt
+  expires_at DateTime
+  created_at DateTime   @default(now())
+
+  // Relations
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("otps")
+}

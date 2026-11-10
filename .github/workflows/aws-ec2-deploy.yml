@@ -1,0 +1,86 @@
+name: Deploy to AWS EC2
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch: # Allows manual trigger from the GitHub Actions UI
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            # Set the target directory for the project
+            PROJECT_DIR="~/safepay"
+
+            # Check if the project directory exists, if not, clone the repository
+            if [ ! -d "$PROJECT_DIR" ]; then
+              echo "Cloning repository..."
+              git clone https://github.com/${{ github.repository }}.git $PROJECT_DIR
+            fi
+
+            cd $PROJECT_DIR
+
+            # Pull the latest changes
+            echo "Pulling latest code..."
+            git fetch --all
+            git reset --hard origin/${{ github.ref_name }}
+            git pull origin ${{ github.ref_name }}
+
+            # Setup environment variables
+            # You can inject secrets from GitHub Actions into the .env files here
+            echo "Setting up environment variables..."
+            
+            # Example for Backend .env
+            cat <<EOF > backend/.env.production
+            PORT=8000
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
+            DIRECT_URL=${{ secrets.DIRECT_URL }}
+            ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET }}
+            REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET }}
+            ACCESS_TOKEN_EXPIRY=15m
+            REFRESH_TOKEN_EXPIRY=7d
+            CORS_ORIGIN=${{ secrets.FRONTEND_URL }}
+            RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
+            EMAIL_FROM=onboarding@resend.dev
+            TWILIO_ACCOUNT_SID=${{ secrets.TWILIO_ACCOUNT_SID }}
+            TWILIO_AUTH_TOKEN=${{ secrets.TWILIO_AUTH_TOKEN }}
+            TWILIO_PHONE_NUMBER=+15673132883
+            NODE_ENV=production
+            ML_API_URL=http://ml-api:5000
+            ML_MODEL_VERSION=v1.0.0
+            EOF
+            
+            # Example for ML-API .env
+            cat <<EOF > ml-api/.env
+            PORT=5000
+            MODEL_PATH=model/safepay_fraud_model.pkl
+            SCALER_PATH=model/safepay_scaler.pkl
+            FEATURES_PATH=model/safepay_features.pkl
+            ML_MODEL_VERSION=v1.0.0
+            NODE_ENV=production
+            EOF
+
+            cat <<EOF > frontend/.env
+            VITE_API_URL=https://api.safepay.vynuro.tech/api/v1
+            VITE_API_BASE_URL=https://api.safepay.vynuro.tech/api
+            EOF
+
+            # Build and restart Docker containers
+            echo "Deploying with Docker Compose..."
+            docker compose down
+            docker compose up --build -d
+
+            echo "Deployment successful! 🚀"

@@ -1,0 +1,88 @@
+name: safepay
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: safepay-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - safepay-net
+    depends_on:
+      - frontend
+      - backend
+
+  ml-api:
+    build:
+      context: ./ml-api
+      dockerfile: Dockerfile
+    container_name: safepay-ml
+    env_file:
+      - ./ml-api/.env
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'python -c "import urllib.request; urllib.request.urlopen(''http://localhost:5000/health'')"',
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    networks:
+      - safepay-net
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: safepay-backend
+    env_file:
+      - ./backend/.env.production
+    environment:
+      ML_API_URL: http://ml-api:5000
+      NODE_ENV: production
+    depends_on:
+      ml-api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:8000/api/v1/health || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - safepay-net
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: /api/v1
+    container_name: safepay-frontend
+    depends_on:
+      backend:
+        condition: service_started
+    networks:
+      - safepay-net
+    restart: unless-stopped
+
+networks:
+  safepay-net:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,42 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "safepay backend | built with express and node",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:integration": "RUN_INTEGRATION=true vitest run src/tests/wallet.integration.test.js",
+    "migrate:deploy": "prisma migrate deploy"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@11.0.8",
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "axios": "^1.16.0",
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.7.0",
+    "express-session": "^1.19.0",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.20.0",
+    "resend": "^6.12.3",
+    "twilio": "^6.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.2",
+    "dotenv": "^17.4.2",
+    "prisma": "^7.8.0",
+    "supertest": "^7.3.0",
+    "vitest": "^5.0.3"
+  }
+}

@@ -1,0 +1,425 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.wrap{padding:4px 0 32px;font-family:var(--font-sans)}
+.step-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);margin-bottom:10px;overflow:hidden;transition:border-color .15s}
+.step-card.done{border-color:var(--color-border-success)}
+.step-header{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;cursor:pointer}
+.step-header:hover{background:var(--color-background-secondary)}
+.step-num-wrap{display:flex;flex-direction:column;align-items:center;gap:0;flex-shrink:0}
+.step-num{width:28px;height:28px;border-radius:50%;border:0.5px solid var(--color-border-secondary);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:var(--color-text-secondary);background:var(--color-background-secondary);flex-shrink:0;transition:all .2s}
+.step-card.done .step-num{background:var(--color-background-success);border-color:var(--color-border-success);color:var(--color-text-success)}
+.step-meta{flex:1}
+.step-title{font-size:14px;font-weight:500;color:var(--color-text-primary);line-height:1.4}
+.step-sub{font-size:12px;color:var(--color-text-secondary);margin-top:3px}
+.step-badge{font-size:11px;padding:2px 8px;border-radius:4px;margin-left:8px;font-weight:500}
+.badge-done{background:var(--color-background-success);color:var(--color-text-success)}
+.badge-now{background:var(--color-background-info);color:var(--color-text-info)}
+.badge-next{background:var(--color-background-secondary);color:var(--color-text-tertiary)}
+.chevron{font-size:10px;color:var(--color-text-tertiary);transition:transform .2s;margin-top:6px}
+.chevron.open{transform:rotate(90deg)}
+.step-body{display:none;border-top:0.5px solid var(--color-border-tertiary);padding:16px}
+.step-body.open{display:block}
+.block-label{font-size:11px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.07em;margin:14px 0 8px}
+.block-label:first-child{margin-top:0}
+pre{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:11px 14px;font-family:var(--font-mono);font-size:12px;line-height:1.7;color:var(--color-text-primary);overflow-x:auto;white-space:pre}
+.check-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;cursor:pointer}
+.check-box{width:16px;height:16px;border-radius:3px;border:0.5px solid var(--color-border-secondary);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.check-box.checked{background:var(--color-background-success);border-color:var(--color-border-success)}
+.check-tick{width:8px;height:8px;display:none}
+.check-box.checked .check-tick{display:block}
+.check-text{font-size:13px;color:var(--color-text-primary);line-height:1.5}
+.check-text.checked{color:var(--color-text-secondary);text-decoration:line-through}
+.tool-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.tool-pill{font-size:12px;padding:4px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);color:var(--color-text-secondary);background:var(--color-background-secondary)}
+.tool-pill.primary{background:var(--color-background-info);border-color:var(--color-border-info);color:var(--color-text-info)}
+.resource-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:4px}
+.resource-card{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:10px 12px}
+.resource-name{font-size:13px;font-weight:500;color:var(--color-text-primary);font-family:var(--font-mono)}
+.resource-route{font-size:11px;color:var(--color-text-tertiary);margin-top:2px}
+.relation-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:13px}
+.rel-arrow{color:var(--color-text-tertiary);font-size:12px}
+.rel-parent{color:var(--color-text-primary);font-family:var(--font-mono)}
+.rel-child{color:var(--color-text-info);font-family:var(--font-mono)}
+.action-group{margin-bottom:12px}
+.action-group-title{font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:6px}
+.action-pills{display:flex;gap:6px;flex-wrap:wrap}
+.action-pill{font-size:12px;padding:3px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);font-family:var(--font-mono);color:var(--color-text-primary)}
+.action-pill.custom{background:var(--color-background-warning);border-color:var(--color-border-warning);color:var(--color-text-warning)}
+.progress-bar-wrap{background:var(--color-background-secondary);border-radius:99px;height:6px;margin-bottom:16px;overflow:hidden}
+.progress-bar{height:6px;background:var(--color-background-success);border-radius:99px;transition:width .4s}
+.progress-label{font-size:12px;color:var(--color-text-secondary);margin-bottom:8px}
+.nav-row{display:flex;gap:8px;margin-top:12px}
+.divider{height:0.5px;background:var(--color-border-tertiary);margin:12px 0}
+.url-example{font-family:var(--font-mono);font-size:12px;background:var(--color-background-secondary);padding:6px 10px;border-radius:var(--border-radius-md);color:var(--color-text-primary);display:block;margin-bottom:6px}
+.note{font-size:12px;color:var(--color-text-secondary);line-height:1.6;padding:10px 12px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);border-left:2px solid var(--color-border-info);border-radius:0;margin-bottom:8px}
+</style>
+
+<div class="wrap">
+
+<div class="progress-label" id="prog-label">Step 1 of 8 — click each step to expand</div>
+<div class="progress-bar-wrap"><div class="progress-bar" id="prog-bar" style="width:12.5%"></div></div>
+
+<div class="step-card done" id="s1">
+  <div class="step-header" onclick="toggle(1)">
+    <div class="step-num-wrap"><div class="step-num">✓</div></div>
+    <div class="step-meta">
+      <div class="step-title">Study wireframes & requirements<span class="step-badge badge-done">done</span></div>
+      <div class="step-sub">Read designs, understand user flows, map data movement</div>
+    </div>
+    <div class="chevron" id="chev-1">▶</div>
+  </div>
+  <div class="step-body" id="body-1">
+    <div class="note">For SafePay we have no Figma yet — but our system design session replaced this. We mapped every screen and every data flow already.</div>
+    <div class="block-label">what we extracted from our design session</div>
+    <div class="check-row" onclick="chk(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 8 8"><polyline points="1,4 3,6 7,2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="check-text">User sends money → needs sender balance, receiver lookup, ML check, result</div></div>
+    <div class="check-row" onclick="chk(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 8 8"><polyline points="1,4 3,6 7,2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="check-text">Admin reviews flagged transactions → needs fraud report list + override action</div></div>
+    <div class="check-row" onclick="chk(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 8 8"><polyline points="1,4 3,6 7,2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="check-text">Dashboard shows balance + recent history → needs wallet + paginated transactions</div></div>
+    <div class="check-row" onclick="chk(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 8 8"><polyline points="1,4 3,6 7,2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="check-text">Notifications bell shows unread count → needs notification list + read status</div></div>
+    <div class="nav-row"><button onclick="openStep(2)">Next step ↗</button></div>
+  </div>
+</div>
+
+<div class="step-card done" id="s2">
+  <div class="step-header" onclick="toggle(2)">
+    <div class="step-num-wrap"><div class="step-num">✓</div></div>
+    <div class="step-meta">
+      <div class="step-title">Extract all resources (find all nouns)<span class="step-badge badge-done">done</span></div>
+      <div class="step-sub">Every noun from requirements becomes a URL path segment</div>
+    </div>
+    <div class="chevron" id="chev-2">▶</div>
+  </div>
+  <div class="step-body" id="body-2">
+    <div class="block-label">SafePay resources → URL segments</div>
+    <div class="resource-grid">
+      <div class="resource-card"><div class="resource-name">users</div><div class="resource-route">/users</div></div>
+      <div class="resource-card"><div class="resource-name">wallets</div><div class="resource-route">/wallet</div></div>
+      <div class="resource-card"><div class="resource-name">transactions</div><div class="resource-route">/transactions</div></div>
+      <div class="resource-card"><div class="resource-name">fraud_reports</div><div class="resource-route">/fraud</div></div>
+      <div class="resource-card"><div class="resource-name">notifications</div><div class="resource-route">/notifications</div></div>
+      <div class="resource-card"><div class="resource-name">sessions</div><div class="resource-route">/auth</div></div>
+      <div class="resource-card"><div class="resource-name">otps</div><div class="resource-route">/auth/otp</div></div>
+      <div class="resource-card"><div class="resource-name">wallet_logs</div><div class="resource-route">/wallet/logs</div></div>
+    </div>
+    <div class="note">Rule: nouns are plural, lowercase, hyphen-separated. Never verbs in URLs — /send-money is wrong, /transactions is right.</div>
+    <div class="nav-row"><button onclick="openStep(3)">Next step ↗</button></div>
+  </div>
+</div>
+
+<div class="step-card done" id="s3">
+  <div class="step-header" onclick="toggle(3)">
+    <div class="step-num-wrap"><div class="step-num">✓</div></div>
+    <div class="step-meta">
+      <div class="step-title">Map all relationships<span class="step-badge badge-done">done</span></div>
+      <div class="step-sub">Who belongs to whom → defines URL nesting, max 3 levels</div>
+    </div>
+    <div class="chevron" id="chev-3">▶</div>
+  </div>
+  <div class="step-body" id="body-3">
+    <div class="block-label">SafePay ownership hierarchy</div>
+    <div class="relation-row"><div class="rel-parent">users</div><div class="rel-arrow">1 ──── 1</div><div class="rel-child">wallets</div></div>
+    <div class="relation-row"><div class="rel-parent">users</div><div class="rel-arrow">1 ──── *</div><div class="rel-child">transactions (sender)</div></div>
+    <div class="relation-row"><div class="rel-parent">users</div><div class="rel-arrow">1 ──── *</div><div class="rel-child">transactions (receiver)</div></div>
+    <div class="relation-row"><div class="rel-parent">users</div><div class="rel-arrow">1 ──── *</div><div class="rel-child">notifications</div></div>
+    <div class="relation-row"><div class="rel-parent">users</div><div class="rel-arrow">1 ──── *</div><div class="rel-child">sessions</div></div>
+    <div class="relation-row"><div class="rel-parent">transactions</div><div class="rel-arrow">1 ──── 1</div><div class="rel-child">fraud_reports</div></div>
+    <div class="relation-row"><div class="rel-parent">transactions</div><div class="rel-arrow">1 ──── *</div><div class="rel-child">wallet_logs</div></div>
+    <div class="divider"></div>
+    <div class="block-label">URL nesting decisions</div>
+    <span class="url-example">GET  /wallet/balance           ← wallet belongs to logged-in user (JWT)</span>
+    <span class="url-example">GET  /transactions/:id         ← flat, not nested — transactions accessed directly</span>
+    <span class="url-example">GET  /transactions/:id/fraud   ← one level nest — fraud belongs to transaction</span>
+    <span class="url-example">GET  /notifications            ← user implicit via JWT, no nesting needed</span>
+    <div class="note">We keep nesting shallow. User context comes from JWT token — so /wallet/balance, not /users/:id/wallet/balance. Flatter URLs are cleaner and easier to consume.</div>
+    <div class="nav-row"><button onclick="openStep(4)">Next step ↗</button></div>
+  </div>
+</div>
+
+<div class="step-card done" id="s4">
+  <div class="step-header" onclick="toggle(4)">
+    <div class="step-num-wrap"><div class="step-num">✓</div></div>
+    <div class="step-meta">
+      <div class="step-title">Design database schema first<span class="step-badge badge-done">done</span></div>
+      <div class="step-sub">DB designed on dbdiagram.io — APIs follow the data shape</div>
+    </div>
+    <div class="chevron" id="chev-4">▶</div>
+  </div>
+  <div class="step-body" id="body-4">
+    <div class="note">Already completed. 8 tables, ACID transactions, indexes, constraints, enums — all done. API shapes now directly mirror DB columns.</div>
+    <div class="block-label">how DB drives API design</div>
+    <div class="check-row" onclick="chk(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 8 8"><polyline points="1,4 3,6 7,2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="check-text">transactions.status enum → API response status field values defined</div></div>
+    <div class="check-row" onclick="chk(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 8 8"><polyline points="1,4 3,6 7,2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="check-text">wallets.balance decimal(14,2) → API always returns balance as string "15000.00"</div></div>
+    <div class="check-row" onclick="chk(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 8 8"><polyline points="1,4 3,6 7,2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="check-text">transactions.fraud_reasons text[] → API returns array of strings</div></div>
+    <div class="check-row" onclick="chk(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 8 8"><polyline points="1,4 3,6 7,2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="check-text">wallet_logs append-only → no PUT/DELETE endpoints exist for logs</div></div>
+    <div class="nav-row"><button onclick="openStep(5)">Next step ↗</button></div>
+  </div>
+</div>
+
+<div class="step-card" id="s5">
+  <div class="step-header" onclick="toggle(5)">
+    <div class="step-num-wrap"><div class="step-num">5</div></div>
+    <div class="step-meta">
+      <div class="step-title">List all actions (CRUD + custom)<span class="step-badge badge-now">doing now</span></div>
+      <div class="step-sub">Every action per resource — standard CRUD + non-CRUD verbs</div>
+    </div>
+    <div class="chevron" id="chev-5">▶</div>
+  </div>
+  <div class="step-body" id="body-5">
+    <div class="block-label">auth & sessions</div>
+    <div class="action-group">
+      <div class="action-pills">
+        <span class="action-pill">POST /auth/register</span>
+        <span class="action-pill">POST /auth/login</span>
+        <span class="action-pill">POST /auth/logout</span>
+        <span class="action-pill">POST /auth/refresh</span>
+        <span class="action-pill">GET /auth/me</span>
+        <span class="action-pill custom">POST /auth/otp/send</span>
+        <span class="action-pill custom">POST /auth/otp/verify</span>
+        <span class="action-pill custom">POST /auth/pin/set</span>
+        <span class="action-pill custom">POST /auth/pin/reset</span>
+      </div>
+    </div>
+    <div class="block-label">wallet</div>
+    <div class="action-group">
+      <div class="action-pills">
+        <span class="action-pill">GET /wallet/balance</span>
+        <span class="action-pill">GET /wallet/logs</span>
+        <span class="action-pill custom">POST /wallet/topup</span>
+        <span class="action-pill custom">POST /wallet/send</span>
+      </div>
+    </div>
+    <div class="block-label">transactions</div>
+    <div class="action-group">
+      <div class="action-pills">
+        <span class="action-pill">GET /transactions</span>
+        <span class="action-pill">GET /transactions/:id</span>
+        <span class="action-pill custom">GET /transactions/:id/receipt</span>
+      </div>
+    </div>
+    <div class="block-label">fraud (admin)</div>
+    <div class="action-group">
+      <div class="action-pills">
+        <span class="action-pill">GET /fraud</span>
+        <span class="action-pill">GET /fraud/:id</span>
+        <span class="action-pill custom">POST /fraud/:id/override</span>
+        <span class="action-pill custom">POST /fraud/:id/confirm</span>
+      </div>
+    </div>
+    <div class="block-label">admin — users</div>
+    <div class="action-group">
+      <div class="action-pills">
+        <span class="action-pill">GET /admin/users</span>
+        <span class="action-pill">GET /admin/users/:id</span>
+        <span class="action-pill custom">POST /admin/users/:id/freeze</span>
+        <span class="action-pill custom">POST /admin/users/:id/unfreeze</span>
+        <span class="action-pill">GET /admin/stats</span>
+      </div>
+    </div>
+    <div class="block-label">notifications</div>
+    <div class="action-group">
+      <div class="action-pills">
+        <span class="action-pill">GET /notifications</span>
+        <span class="action-pill custom">POST /notifications/:id/read</span>
+        <span class="action-pill custom">POST /notifications/read-all</span>
+      </div>
+    </div>
+    <div class="note">Orange = non-CRUD custom actions. Rule: when an action is not create/read/update/delete, make it POST /:id/{verb}. freeze, unfreeze, override, confirm, send — all become POST with action in the path.</div>
+    <div class="nav-row"><button onclick="openStep(6)">Next step ↗</button></div>
+  </div>
+</div>
+
+<div class="step-card" id="s6">
+  <div class="step-header" onclick="toggle(6)">
+    <div class="step-num-wrap"><div class="step-num">6</div></div>
+    <div class="step-meta">
+      <div class="step-title">Design in Postman first<span class="step-badge badge-next">up next</span></div>
+      <div class="step-sub">Every endpoint, every body shape, every response — before any code</div>
+    </div>
+    <div class="chevron" id="chev-6">▶</div>
+  </div>
+  <div class="step-body" id="body-6">
+    <div class="block-label">tools</div>
+    <div class="tool-row">
+      <span class="tool-pill primary">Postman (recommended)</span>
+      <span class="tool-pill">Insomnia</span>
+      <span class="tool-pill">Thunder Client (VS Code)</span>
+    </div>
+    <div class="block-label">what to do in Postman for SafePay</div>
+    <div class="check-row" onclick="chk(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 8 8"><polyline points="1,4 3,6 7,2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="check-text">Create a collection called "SafePay API v1"</div></div>
+    <div class="check-row" onclick="chk(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 8 8"><polyline points="1,4 3,6 7,2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="check-text">Create folders: Auth, Wallet, Transactions, Fraud, Admin, Notifications</div></div>
+    <div class="check-row" onclick="chk(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 8 8"><polyline points="1,4 3,6 7,2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="check-text">Add every endpoint with example request body (use our API design as source)</div></div>
+    <div class="check-row" onclick="chk(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 8 8"><polyline points="1,4 3,6 7,2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="check-text">Add example responses for 200, 400, 401, 422, 429 on each endpoint</div></div>
+    <div class="check-row" onclick="chk(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 8 8"><polyline points="1,4 3,6 7,2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="check-text">Set environment variables: {{base_url}}, {{access_token}}, {{user_id}}</div></div>
+    <div class="check-row" onclick="chk(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 8 8"><polyline points="1,4 3,6 7,2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="check-text">Write pre-request script to auto-attach JWT token to protected routes</div></div>
+    <div class="block-label">Postman environment setup</div>
+    <pre>Variable        Initial value
+────────────────────────────────
+base_url        http://localhost:8000/v1
+access_token    (set by login test script)
+user_id         (set by login test script)
+admin_token     (set by admin login)</pre>
+    <div class="nav-row"><button onclick="openStep(7)">Next step ↗</button></div>
+  </div>
+</div>
+
+<div class="step-card" id="s7">
+  <div class="step-header" onclick="toggle(7)">
+    <div class="step-num-wrap"><div class="step-num">7</div></div>
+    <div class="step-meta">
+      <div class="step-title">Write OpenAPI / Swagger spec<span class="step-badge badge-next">up next</span></div>
+      <div class="step-sub">YAML source of truth — auto-generates docs + frontend can mock against it</div>
+    </div>
+    <div class="chevron" id="chev-7">▶</div>
+  </div>
+  <div class="step-body" id="body-7">
+    <div class="block-label">tools</div>
+    <div class="tool-row">
+      <span class="tool-pill primary">swagger.io/tools/swagger-editor</span>
+      <span class="tool-pill">Postman → Export as OpenAPI</span>
+      <span class="tool-pill">VS Code: OpenAPI extension</span>
+    </div>
+    <div class="block-label">SafePay openapi.yaml — starter</div>
+    <pre>openapi: 3.0.3
+info:
+  title: SafePay API
+  description: Digital wallet with AI fraud detection
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8000/v1
+    description: Local dev
+  - url: https://api.safepay.pk/v1
+    description: Production
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        success: { type: boolean, example: false }
+        error:
+          type: object
+          properties:
+            code: { type: string }
+            message: { type: string }
+            field: { type: string }
+
+    User:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        full_name: { type: string }
+        email: { type: string, format: email }
+        phone: { type: string }
+        role: { type: string, enum: [user, admin] }
+        is_verified: { type: boolean }
+        is_frozen: { type: boolean }
+        created_at: { type: string, format: date-time }
+
+    Wallet:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        balance: { type: string, example: "15000.00" }
+        currency: { type: string, example: PKR }
+
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register new account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [full_name,email,phone,cnic,password,pin]
+              properties:
+                full_name: { type: string }
+                email: { type: string, format: email }
+                phone: { type: string, example: "03001234567" }
+                cnic: { type: string, example: "42201-1234567-1" }
+                password: { type: string, minLength: 8 }
+                pin: { type: string, pattern: "^[0-9]{4}$" }
+      responses:
+        "201": { description: Account created }
+        "409": { description: Duplicate email/phone/CNIC }
+        "422": { description: Validation error }
+        "429": { description: Rate limit exceeded }</pre>
+    <div class="note">Once your YAML is written, paste it into editor.swagger.io — it instantly generates a live interactive API playground. Your React frontend team can use this to mock responses before backend is built.</div>
+    <div class="nav-row"><button onclick="openStep(8)">Next step ↗</button></div>
+  </div>
+</div>
+
+<div class="step-card" id="s8">
+  <div class="step-header" onclick="toggle(8)">
+    <div class="step-num-wrap"><div class="step-num">8</div></div>
+    <div class="step-meta">
+      <div class="step-title">Build → test → document → ship<span class="step-badge badge-next">final phase</span></div>
+      <div class="step-sub">Code comes last. Every endpoint tested before moving to next.</div>
+    </div>
+    <div class="chevron" id="chev-8">▶</div>
+  </div>
+  <div class="step-body" id="body-8">
+    <div class="block-label">SafePay build order</div>
+    <div class="check-row" onclick="chk(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 8 8"><polyline points="1,4 3,6 7,2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="check-text">Week 1 — PostgreSQL + Prisma setup, all migrations, seed data</div></div>
+    <div class="check-row" onclick="chk(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 8 8"><polyline points="1,4 3,6 7,2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="check-text">Week 2 — Python FastAPI + your ML model connected and tested</div></div>
+    <div class="check-row" onclick="chk(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 8 8"><polyline points="1,4 3,6 7,2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="check-text">Week 3 — Auth & OTP endpoints (register, login, verify, PIN)</div></div>
+    <div class="check-row" onclick="chk(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 8 8"><polyline points="1,4 3,6 7,2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="check-text">Week 4 — Wallet endpoints (balance, topup, SEND MONEY — core feature)</div></div>
+    <div class="check-row" onclick="chk(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 8 8"><polyline points="1,4 3,6 7,2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="check-text">Week 5 — Fraud + Admin endpoints</div></div>
+    <div class="check-row" onclick="chk(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 8 8"><polyline points="1,4 3,6 7,2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="check-text">Week 6 — React frontend (user side)</div></div>
+    <div class="check-row" onclick="chk(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 8 8"><polyline points="1,4 3,6 7,2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="check-text">Week 7 — Admin dashboard + Socket.io notifications</div></div>
+    <div class="check-row" onclick="chk(this)"><div class="check-box"><svg class="check-tick" viewBox="0 0 8 8"><polyline points="1,4 3,6 7,2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div><div class="check-text">Week 8 — Deploy: Railway (Node) + Render (Python) + Vercel (React)</div></div>
+    <div class="block-label">rule for every endpoint</div>
+    <pre>Build endpoint
+    → Test in Postman (all happy + error paths)
+    → Update OpenAPI YAML
+    → Commit to GitHub
+    → Move to next endpoint
+
+Never build 3 endpoints then test.
+Test each one before writing the next.</pre>
+  </div>
+</div>
+
+</div>
+
+<script>
+const totalSteps=8;
+function toggle(n){
+  const body=document.getElementById('body-'+n);
+  const chev=document.getElementById('chev-'+n);
+  const open=body.classList.toggle('open');
+  chev.classList.toggle('open',open);
+  updateProgress();
+}
+function openStep(n){
+  const body=document.getElementById('body-'+n);
+  const chev=document.getElementById('chev-'+n);
+  if(!body.classList.contains('open')){
+    body.classList.add('open');
+    chev.classList.add('open');
+  }
+  document.getElementById('s'+n).scrollIntoView({behavior:'smooth',block:'start'});
+  updateProgress();
+}
+function chk(row){
+  const box=row.querySelector('.check-box');
+  const txt=row.querySelector('.check-text');
+  const checked=box.classList.toggle('checked');
+  txt.classList.toggle('checked',checked);
+}
+function updateProgress(){
+  const open=document.querySelectorAll('.step-body.open').length;
+  const pct=Math.max(12.5,Math.round((open/totalSteps)*100));
+  document.getElementById('prog-bar').style.width=pct+'%';
+  document.getElementById('prog-label').textContent='Step '+Math.min(open+1,totalSteps)+' of '+totalSteps+' — '+open+' expanded';
+}
+</script>

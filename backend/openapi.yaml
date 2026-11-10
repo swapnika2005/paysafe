@@ -1,0 +1,440 @@
+openapi: 3.0.3
+info:
+  title: SafePay API v1
+  version: 1.0.0
+  contact: {}
+servers:
+  - url: "{{base_url}}"
+paths:
+  /auth/register:
+    post:
+      tags:
+        - Auth
+      summary: POST Register
+      description: POST Register
+      operationId: postRegister
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                cnic:
+                  type: string
+                  example: 42201-1234567-1
+                email:
+                  type: string
+                  example: ali@gmail.com
+                full_name:
+                  type: string
+                  example: Ali Hassan
+                password:
+                  type: string
+                  example: Secure@123
+                phone:
+                  type: string
+                  example: "03001234567"
+                pin:
+                  type: string
+                  example: "4821"
+            examples:
+              POST Register:
+                value:
+                  cnic: 42201-1234567-1
+                  email: ali@gmail.com
+                  full_name: Ali Hassan
+                  password: Secure@123
+                  phone: "03001234567"
+                  pin: "4821"
+      responses:
+        "201":
+          description: 201 created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      access_token:
+                        type: string
+                        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                      expires_in:
+                        type: number
+                        example: 900
+                      token_type:
+                        type: string
+                        example: Bearer
+                      user:
+                        type: object
+                        properties:
+                          created_at:
+                            type: string
+                            example: "2026-05-01T10:00:00Z"
+                          email:
+                            type: string
+                            example: ali@gmail.com
+                          full_name:
+                            type: string
+                            example: Ali Hassan
+                          id:
+                            type: string
+                            example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                          is_verified:
+                            type: boolean
+                            example: false
+                          phone:
+                            type: string
+                            example: "03001234567"
+                          role:
+                            type: string
+                            example: user
+                      wallet:
+                        type: object
+                        properties:
+                          balance:
+                            type: string
+                            example: "0.00"
+                          currency:
+                            type: string
+                            example: PKR
+                          id:
+                            type: string
+                            example: b2c3d4e5-f6a7-8901-bcde-f12345678901
+                  message:
+                    type: string
+                    example: Account created. Please verify your phone.
+                  success:
+                    type: boolean
+                    example: true
+              examples:
+                201 created:
+                  value:
+                    data:
+                      access_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                      expires_in: 900
+                      token_type: Bearer
+                      user:
+                        created_at: "2026-05-01T10:00:00Z"
+                        email: ali@gmail.com
+                        full_name: Ali Hassan
+                        id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                        is_verified: false
+                        phone: "03001234567"
+                        role: user
+                      wallet:
+                        balance: "0.00"
+                        currency: PKR
+                        id: b2c3d4e5-f6a7-8901-bcde-f12345678901
+                    message: Account created. Please verify your phone.
+                    success: true
+        "409":
+          description: 409 Conflict
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: DUPLICATE_ENTRY
+                      field:
+                        type: string
+                        example: phone
+                      message:
+                        type: string
+                        example: An account with this phone number already exists.
+                  success:
+                    type: boolean
+                    example: false
+              examples:
+                409 Conflict:
+                  value:
+                    error:
+                      code: DUPLICATE_ENTRY
+                      field: phone
+                      message: An account with this phone number already exists.
+                    success: false
+        "422":
+          description: 422 Validation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: VALIDATION_ERROR
+                      fields:
+                        type: object
+                        properties:
+                          cnic:
+                            type: string
+                            example: "Invalid CNIC format. Expected: XXXXX-XXXXXXX-X"
+                          password:
+                            type: string
+                            example: >-
+                              Password must contain at least one special
+                              character.
+                      message:
+                        type: string
+                        example: Request validation failed.
+                  success:
+                    type: boolean
+                    example: false
+              examples:
+                422 Validation:
+                  value:
+                    error:
+                      code: VALIDATION_ERROR
+                      fields:
+                        cnic: "Invalid CNIC format. Expected: XXXXX-XXXXXXX-X"
+                        password: Password must contain at least one special character.
+                      message: Request validation failed.
+                    success: false
+        "429":
+          description: 429 Rate Limit
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: RATE_LIMIT_EXCEEDED
+                      message:
+                        type: string
+                        example: >-
+                          Too many registration attempts. Try again in 60
+                          minutes.
+                      retry_after:
+                        type: number
+                        example: 3600
+                  success:
+                    type: boolean
+                    example: false
+              examples:
+                429 Rate Limit:
+                  value:
+                    error:
+                      code: RATE_LIMIT_EXCEEDED
+                      message: Too many registration attempts. Try again in 60 minutes.
+                      retry_after: 3600
+                    success: false
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: POST Login
+      description: POST Login
+      operationId: postLogin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                device_info:
+                  type: string
+                  example: Chrome 124 / Windows 11
+                email:
+                  type: string
+                  example: ali@gmail.com
+                password:
+                  type: string
+                  example: Secure@123
+            examples:
+              POST Login:
+                value:
+                  device_info: Chrome 124 / Windows 11
+                  email: ali@gmail.com
+                  password: Secure@123
+      responses:
+        "200":
+          description: 200 OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      access_token:
+                        type: string
+                        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                      expires_in:
+                        type: number
+                        example: 900
+                      token_type:
+                        type: string
+                        example: Bearer
+                      user:
+                        type: object
+                        properties:
+                          email:
+                            type: string
+                            example: ali@gmail.com
+                          full_name:
+                            type: string
+                            example: Ali Hassan
+                          id:
+                            type: string
+                            example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                          is_frozen:
+                            type: boolean
+                            example: false
+                          is_verified:
+                            type: boolean
+                            example: true
+                          phone:
+                            type: string
+                            example: "03001234567"
+                          role:
+                            type: string
+                            example: user
+                      wallet:
+                        type: object
+                        properties:
+                          balance:
+                            type: string
+                            example: "15000.00"
+                          currency:
+                            type: string
+                            example: PKR
+                          id:
+                            type: string
+                            example: b2c3d4e5-f6a7-8901-bcde-f12345678901
+                  success:
+                    type: boolean
+                    example: true
+              examples:
+                200 OK:
+                  value:
+                    data:
+                      access_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                      expires_in: 900
+                      token_type: Bearer
+                      user:
+                        email: ali@gmail.com
+                        full_name: Ali Hassan
+                        id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                        is_frozen: false
+                        is_verified: true
+                        phone: "03001234567"
+                        role: user
+                      wallet:
+                        balance: "15000.00"
+                        currency: PKR
+                        id: b2c3d4e5-f6a7-8901-bcde-f12345678901
+                    success: true
+        "401":
+          description: 401 Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: INVALID_CREDENTIALS
+                      message:
+                        type: string
+                        example: Email or password is incorrect.
+                  success:
+                    type: boolean
+                    example: false
+              examples:
+                401 Unauthorized:
+                  value:
+                    error:
+                      code: INVALID_CREDENTIALS
+                      message: Email or password is incorrect.
+                    success: false
+        "403":
+          description: 403 Frozen
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: ACCOUNT_FROZEN
+                      message:
+                        type: string
+                        example: Your account has been suspended. Contact support.
+                      support_email:
+                        type: string
+                        example: support@safepay.pk
+                  success:
+                    type: boolean
+                    example: false
+              examples:
+                403 Frozen:
+                  value:
+                    error:
+                      code: ACCOUNT_FROZEN
+                      message: Your account has been suspended. Contact support.
+                      support_email: support@safepay.pk
+                    success: false
+        "429":
+          description: 429 Rate Limit
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: RATE_LIMIT_EXCEEDED
+                      message:
+                        type: string
+                        example: Too many login attempts. Try again in 60 minutes.
+                      retry_after:
+                        type: number
+                        example: 3600
+                  success:
+                    type: boolean
+                    example: false
+              examples:
+                429 Rate Limit:
+                  value:
+                    error:
+                      code: RATE_LIMIT_EXCEEDED
+                      message: Too many login attempts. Try again in 60 minutes.
+                      retry_after: 3600
+                    success: false
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+security:
+  - bearerAuth: []
+tags:
+  - name: Auth
+  - name: Wallet
+  - name: Transactions
+  - name: Fraud
+  - name: Admin
+  - name: Notifications
